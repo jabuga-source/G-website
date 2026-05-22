@@ -20,6 +20,8 @@ body {
     justify-content: center;
     align-items: center;
     padding: 20px;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .container {
@@ -60,6 +62,8 @@ input {
     border-radius: 10px;
     border: none;
     font-size: 1rem;
+    background: #f8fafc;
+    color: #0f172a;
 }
 
 button {
@@ -81,6 +85,25 @@ button:hover {
     transform: scale(1.02);
 }
 
+.btn-secondary {
+    background: #38bdf8;
+    margin-top: 15px;
+}
+.btn-secondary:hover {
+    background: #0284c7;
+}
+
+.btn-danger {
+    background: #ef4444;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    width: auto;
+    margin: 0;
+}
+.btn-danger:hover {
+    background: #dc2626;
+}
+
 .results {
     margin-top: 30px;
     background: rgba(255,255,255,0.06);
@@ -99,6 +122,43 @@ button:hover {
     color: #38bdf8;
     font-weight: bold;
     margin-bottom: 5px;
+}
+
+/* Host Panel & Table Styling */
+.host-section {
+    margin-top: 30px;
+    border-top: 2px dashed rgba(255,255,255,0.2);
+    padding-top: 20px;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    margin-top: 15px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+th {
+    background-color: #1e293b;
+    color: #38bdf8;
+}
+
+tr:hover {
+    background: rgba(255,255,255,0.05);
 }
 
 .footer {
@@ -141,32 +201,62 @@ button:hover {
         <input type="number" id="amountPaid" placeholder="Enter amount paid back" />
     </div>
 
-    <button onclick="calculateLoan()">Calculate Loan Details</button>
+    <button onclick="calculateLoan()">Calculate & Save Loan Details</button>
 
     <div class="results" id="results" style="display:none;">
         <div class="result-box">
             <div class="result-title">Customer</div>
             <div id="customerResult"></div>
         </div>
-
         <div class="result-box">
             <div class="result-title">Interest Earned</div>
             <div id="interestResult"></div>
         </div>
-
         <div class="result-box">
             <div class="result-title">Total Amount To Be Paid</div>
             <div id="totalResult"></div>
         </div>
-
         <div class="result-box">
             <div class="result-title">Remaining Balance</div>
             <div id="balanceResult"></div>
         </div>
-
         <div class="result-box">
             <div class="result-title">Payment Status</div>
             <div id="statusResult"></div>
+        </div>
+    </div>
+
+    <div class="host-section">
+        <div id="loginForm">
+            <h3 style="margin-bottom: 10px; color: #38bdf8;">Host Server Login</h3>
+            <div class="form-group">
+                <input type="password" id="hostPassword" placeholder="Enter Host Password" />
+            </div>
+            <button onclick="loginHost()" class="btn-secondary">Access Host Database</button>
+        </div>
+
+        <div id="hostDashboard" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="color: #22c55e;">Secure Server Database</h3>
+                <button onclick="logoutHost()" class="btn-danger" style="width: auto; margin:0;">Logout</button>
+            </div>
+            
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Customer</th>
+                            <th>Lent (KES)</th>
+                            <th>Paid (KES)</th>
+                            <th>Balance (KES)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="databaseRecords">
+                        </tbody>
+                </table>
+            </div>
+            <button onclick="clearDatabase()" class="btn-danger" style="margin-top: 15px; width: 100%;">Wipe Server Database</button>
         </div>
     </div>
 
@@ -176,6 +266,16 @@ button:hover {
 </div>
 
 <script>
+// Default Host Password (Change this to whatever you want)
+const HOST_PASSWORD = "admin";
+
+// Check if Host was already logged in on previous page view
+window.onload = function() {
+    if (sessionStorage.getItem('hostLoggedIn') === 'true') {
+        showDashboard();
+    }
+};
+
 function calculateLoan() {
     const customerName = document.getElementById('customerName').value;
     const amountLent = parseFloat(document.getElementById('amountLent').value);
@@ -201,13 +301,102 @@ function calculateLoan() {
         status = 'Customer overpaid by KES ' + Math.abs(remainingBalance).toFixed(2);
     }
 
+    // Display basic results screen
     document.getElementById('results').style.display = 'block';
-
     document.getElementById('customerResult').innerHTML = customerName;
     document.getElementById('interestResult').innerHTML = 'KES ' + interestEarned.toFixed(2);
     document.getElementById('totalResult').innerHTML = 'KES ' + totalToPay.toFixed(2);
     document.getElementById('balanceResult').innerHTML = 'KES ' + Math.abs(remainingBalance).toFixed(2);
     document.getElementById('statusResult').innerHTML = status;
+
+    // --- SERVER STORAGE LOGIC ---
+    // Create timestamp string
+    const now = new Date();
+    const timestamp = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+    // Construct record object
+    const newRecord = {
+        time: timestamp,
+        name: customerName,
+        lent: amountLent.toFixed(2),
+        paid: amountPaid.toFixed(2),
+        balance: remainingBalance.toFixed(2)
+    };
+
+    // Grab existing DB array from localStorage, or start a new empty array
+    let database = JSON.parse(localStorage.getItem('gFinancesDB')) || [];
+    database.push(newRecord);
+    
+    // Save back to local storage "server"
+    localStorage.setItem('gFinancesDB', JSON.stringify(database));
+
+    // Refresh table if the host dashboard is open
+    if (sessionStorage.getItem('hostLoggedIn') === 'true') {
+        updateDatabaseTable();
+    }
+
+    // Clear form inputs for the next entry
+    document.getElementById('customerName').value = '';
+    document.getElementById('amountLent').value = '';
+    document.getElementById('interestRate').value = '';
+    document.getElementById('amountPaid').value = '';
+}
+
+// Host Authentication Logic
+function loginHost() {
+    const enteredPassword = document.getElementById('hostPassword').value;
+    if (enteredPassword === HOST_PASSWORD) {
+        sessionStorage.setItem('hostLoggedIn', 'true');
+        showDashboard();
+        document.getElementById('hostPassword').value = '';
+    } else {
+        alert('Invalid Host Password access denied.');
+    }
+}
+
+function logoutHost() {
+    sessionStorage.removeItem('hostLoggedIn');
+    document.getElementById('hostDashboard').style.display = 'none';
+    document.getElementById('loginForm').style.display = 'block';
+}
+
+function showDashboard() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('hostDashboard').style.display = 'block';
+    updateDatabaseTable();
+}
+
+// Render dynamic server rows into dashboard table
+function updateDatabaseTable() {
+    const tableBody = document.getElementById('databaseRecords');
+    tableBody.innerHTML = ''; // reset content
+
+    const database = JSON.parse(localStorage.getItem('gFinancesDB')) || [];
+
+    if (database.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">No server logs found.</td></tr>`;
+        return;
+    }
+
+    // Loop backwards to show the newest entries at the top
+    for (let i = database.length - 1; i >= 0; i--) {
+        const record = database[i];
+        const row = `<tr>
+            <td>${record.time}</td>
+            <td><strong>${record.name}</strong></td>
+            <td>KES ${record.lent}</td>
+            <td>KES ${record.paid}</td>
+            <td style="color: ${parseFloat(record.balance) > 0 ? '#ef4444' : '#22c55e'}">KES ${record.balance}</td>
+        </tr>`;
+        tableBody.innerHTML += row;
+    }
+}
+
+function clearDatabase() {
+    if (confirm("Are you sure you want to permanently clear all logs from the server database?")) {
+        localStorage.removeItem('gFinancesDB');
+        updateDatabaseTable();
+    }
 }
 </script>
 
