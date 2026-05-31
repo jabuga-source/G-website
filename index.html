@@ -22,6 +22,7 @@ body {
     padding: 20px;
     flex-direction: column;
     gap: 20px;
+    position: relative;
 }
 
 .container {
@@ -32,6 +33,7 @@ body {
     padding: 30px;
     border-radius: 20px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    margin-bottom: 40px;
 }
 
 h1 {
@@ -181,8 +183,8 @@ tr:hover {
     font-size: 0.9rem;
 }
 
-/* Auth Login & Settings Panel Styling */
-.login-box, .settings-box {
+/* Auth Login Panel Styling */
+.login-box {
     background: rgba(255, 255, 255, 0.05);
     padding: 20px;
     border-radius: 12px;
@@ -196,6 +198,61 @@ tr:hover {
     margin-top: 10px;
     display: none;
     font-weight: bold;
+}
+
+/* BOTTOM LEFT FIXED BUTTON */
+.bottom-left-admin-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: #020617;
+    color: #94a3b8;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 10px 14px;
+    font-size: 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+    width: auto;
+    margin: 0;
+    z-index: 999;
+    font-weight: normal;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    display: none; /* Only reveals when Admin session is verified */
+    transition: all 0.2s ease;
+}
+
+.bottom-left-admin-btn:hover {
+    background: #0f172a;
+    color: #f8fafc;
+    border-color: #38bdf8;
+}
+
+/* MODAL OVERLAY BACKDROP FOR CHANGING PASSWORD */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.modal-box {
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 25px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
 }
 
 .settings-success {
@@ -280,22 +337,6 @@ tr:hover {
             </div>
         </div>
 
-        <div class="settings-box">
-            <div class="result-title" style="margin-bottom: 12px;">Update Security Credentials</div>
-            <div class="form-group">
-                <label style="font-size: 0.85rem; color: #cbd5e1;">Current Password Verification</label>
-                <input type="password" id="currentPassCheck" placeholder="Confirm old password" style="padding: 8px; font-size: 0.9rem;" />
-            </div>
-            <div class="form-group">
-                <label style="font-size: 0.85rem; color: #cbd5e1;">New Target Password</label>
-                <input type="password" id="newPassValue" placeholder="Enter new secret password" style="padding: 8px; font-size: 0.9rem;" />
-            </div>
-            <button class="btn-secondary" style="margin-top: 5px; padding: 10px; font-size: 0.9rem;" onclick="changeAdminPassword()">Apply Security Patch</button>
-            <p class="auth-error" id="settingsErrorMessage"></p>
-            <p class="settings-success" id="settingsSuccessMessage">Security changes verified and applied successfully!</p>
-        </div>
-        <br>
-
         <label>Activity Ledger System</label>
         <div class="table-wrapper">
             <table>
@@ -320,12 +361,34 @@ tr:hover {
     &copy; 2026 G Finances. Secure, Analytical Ledger.
 </div>
 
+<button class="bottom-left-admin-btn" id="fixedSettingsBtn" onclick="openPasswordModal()">⚙ Change Password</button>
+
+<div class="modal-overlay" id="passwordModal">
+    <div class="modal-box">
+        <div class="result-title" style="margin-bottom: 15px; font-size: 1.2rem;">Modify Portal Password</div>
+        
+        <div class="form-group">
+            <label style="font-size: 0.85rem; color: #cbd5e1;">Current Password</label>
+            <input type="password" id="currentPassCheck" placeholder="Confirm old password" style="padding: 10px; font-size: 0.9rem;" />
+        </div>
+        
+        <div class="form-group">
+            <label style="font-size: 0.85rem; color: #cbd5e1;">New Password</label>
+            <input type="password" id="newPassValue" placeholder="Enter new secret code" style="padding: 10px; font-size: 0.9rem;" />
+        </div>
+        
+        <button class="btn-secondary" style="margin-top: 5px; padding: 12px; font-size: 0.95rem;" onclick="changeAdminPassword()">Update Security Key</button>
+        <button class="btn-danger" style="margin-top: 10px; width: 100%; padding: 10px; background: #475569;" onclick="closePasswordModal()">Cancel</button>
+        
+        <p class="auth-error" id="settingsErrorMessage"></p>
+        <p class="settings-success" id="settingsSuccessMessage">Password updated successfully!</p>
+    </div>
+</div>
+
 <script>
-    // System Memory State Variables
     let loanLedger = [];
     let isAdminAuthenticated = false;
     
-    // Default authentication values stored in system memory state
     let currentAdminUsername = "Gisore";
     let currentAdminPassword = "Gisore@007";
 
@@ -376,12 +439,14 @@ tr:hover {
         const passIn = document.getElementById('adminPass').value;
         const errorMsg = document.getElementById('loginErrorMessage');
 
-        // Verify credentials against the updated state configurations
         if (userIn === currentAdminUsername && passIn === currentAdminPassword) {
             isAdminAuthenticated = true;
             errorMsg.style.display = 'none';
             document.getElementById('adminGateSection').style.display = 'none';
             document.getElementById('secureBackendSection').style.display = 'block';
+            
+            // Show the dynamic configuration button at bottom-left corner
+            document.getElementById('fixedSettingsBtn').style.display = 'block';
             
             document.getElementById('adminUser').value = '';
             document.getElementById('adminPass').value = '';
@@ -392,18 +457,34 @@ tr:hover {
         }
     }
 
-    // Dynamic Password Assignment Module inside the Authenticated Portal
+    /* OVERLAY MODAL TOGGLES */
+    function openPasswordModal() {
+        const modal = document.getElementById('passwordModal');
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+    }
+
+    function closePasswordModal() {
+        const modal = document.getElementById('passwordModal');
+        modal.style.visibility = 'hidden';
+        modal.style.opacity = '0';
+        
+        // Reset sub-text field metrics safely upon closing
+        document.getElementById('currentPassCheck').value = '';
+        document.getElementById('newPassValue').value = '';
+        document.getElementById('settingsErrorMessage').style.display = 'none';
+        document.getElementById('settingsSuccessMessage').style.display = 'none';
+    }
+
     function changeAdminPassword() {
         const currentCheck = document.getElementById('currentPassCheck').value;
         const newPassword = document.getElementById('newPassValue').value.trim();
         const errorMsg = document.getElementById('settingsErrorMessage');
         const successMsg = document.getElementById('settingsSuccessMessage');
 
-        // Clear display states
         errorMsg.style.display = 'none';
         successMsg.style.display = 'none';
 
-        // Validation checks
         if (currentCheck !== currentAdminPassword) {
             errorMsg.innerText = "Verification failed: Current password mismatch.";
             errorMsg.style.display = 'block';
@@ -411,18 +492,18 @@ tr:hover {
         }
 
         if (newPassword.length < 4) {
-            errorMsg.innerText = "Security Weakness: New password must be at least 4 characters long.";
+            errorMsg.innerText = "Security Error: Code must be at least 4 characters.";
             errorMsg.style.display = 'block';
             return;
         }
 
-        // Apply updated password variables to memory states
         currentAdminPassword = newPassword;
         successMsg.style.display = 'block';
 
-        // Clear settings form inputs
-        document.getElementById('currentPassCheck').value = '';
-        document.getElementById('newPassValue').value = '';
+        // Auto-close modal after a small validation display timeout delay
+        setTimeout(() => {
+            closePasswordModal();
+        }, 1200);
     }
 
     function logoutAdmin() {
@@ -431,9 +512,9 @@ tr:hover {
         document.getElementById('adminGateSection').style.display = 'block';
         document.getElementById('loginFields').style.display = 'none';
         
-        // Reset sub-panel state alerts on logout
-        document.getElementById('settingsErrorMessage').style.display = 'none';
-        document.getElementById('settingsSuccessMessage').style.display = 'none';
+        // Hide fixed button upon portal exit
+        document.getElementById('fixedSettingsBtn').style.display = 'none';
+        closePasswordModal();
     }
 
     function deleteRecord(id) {
