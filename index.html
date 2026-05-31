@@ -1,4 +1,3 @@
-HTML
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -182,6 +181,31 @@ tr:hover {
     font-size: 0.9rem;
 }
 
+/* Auth Login & Settings Panel Styling */
+.login-box, .settings-box {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.auth-error {
+    color: #ef4444;
+    font-size: 0.9rem;
+    margin-top: 10px;
+    display: none;
+    font-weight: bold;
+}
+
+.settings-success {
+    color: #22c55e;
+    font-size: 0.9rem;
+    margin-top: 10px;
+    display: none;
+    font-weight: bold;
+}
+
 @media (max-width: 600px) {
     h1 {
         font-size: 2rem;
@@ -215,7 +239,7 @@ tr:hover {
         <input type="number" id="duration" min="0" step="any" placeholder="e.g. 3" />
     </div>
 
-    <button onclick="calculateLoan()">Calculate & Save</button>
+    <button onclick="calculateLoan()">Calculate & Save Activity</button>
 
     <div class="results" id="resultsPanel" style="display: none;">
         <div class="result-box">
@@ -228,20 +252,56 @@ tr:hover {
         </div>
     </div>
 
-    <div class="host-section">
+    <div id="adminGateSection" style="margin-top: 25px;">
+        <button class="btn-secondary" id="toggleLoginBtn" onclick="showLoginFields()">Open Admin Backend Portal</button>
+        
+        <div class="login-box" id="loginFields" style="display: none;">
+            <div class="form-group">
+                <label>Admin Username</label>
+                <input type="text" id="adminUser" placeholder="Username" />
+            </div>
+            <div class="form-group">
+                <label>Admin Password</label>
+                <input type="password" id="adminPass" placeholder="Password" />
+            </div>
+            <button onclick="verifyAdminAuth()">Verify Credentials</button>
+            <p class="auth-error" id="loginErrorMessage">Invalid username or password. Access Denied.</p>
+        </div>
+    </div>
+
+    <div class="host-section" id="secureBackendSection" style="display: none;">
         <div class="host-profile-box">
-            <div class="result-title">Global Portfolio Metrics</div>
-            <div class="flex-container">
-                <div>Total Active Records: <span id="totalRecords">0</span></div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="result-title" style="margin: 0;">Admin Backend Log Dashboard</div>
+                <button class="btn-danger" style="padding: 5px 10px; font-size: 0.8rem;" onclick="logoutAdmin()">Lock Backend</button>
+            </div>
+            <div class="flex-container" style="margin-top: 12px;">
+                <div>Total Active Recorded Log Entries: <span id="totalRecords" style="color: #38bdf8; font-weight: bold;">0</span></div>
             </div>
         </div>
 
-        <label>Active Loan Ledger</label>
+        <div class="settings-box">
+            <div class="result-title" style="margin-bottom: 12px;">Update Security Credentials</div>
+            <div class="form-group">
+                <label style="font-size: 0.85rem; color: #cbd5e1;">Current Password Verification</label>
+                <input type="password" id="currentPassCheck" placeholder="Confirm old password" style="padding: 8px; font-size: 0.9rem;" />
+            </div>
+            <div class="form-group">
+                <label style="font-size: 0.85rem; color: #cbd5e1;">New Target Password</label>
+                <input type="password" id="newPassValue" placeholder="Enter new secret password" style="padding: 8px; font-size: 0.9rem;" />
+            </div>
+            <button class="btn-secondary" style="margin-top: 5px; padding: 10px; font-size: 0.9rem;" onclick="changeAdminPassword()">Apply Security Patch</button>
+            <p class="auth-error" id="settingsErrorMessage"></p>
+            <p class="settings-success" id="settingsSuccessMessage">Security changes verified and applied successfully!</p>
+        </div>
+        <br>
+
+        <label>Activity Ledger System</label>
         <div class="table-wrapper">
             <table>
                 <thead>
                     <tr>
-                        <th>Customer</th>
+                        <th>Customer Name</th>
                         <th>Principal</th>
                         <th>Rate</th>
                         <th>Term</th>
@@ -261,54 +321,123 @@ tr:hover {
 </div>
 
 <script>
-    // State management array to hold our calculated logs
+    // System Memory State Variables
     let loanLedger = [];
+    let isAdminAuthenticated = false;
+    
+    // Default authentication values stored in system memory state
+    let currentAdminUsername = "Gisore";
+    let currentAdminPassword = "Gisore@007";
 
     function calculateLoan() {
-        // 1. Fetch values from inputs
         const name = document.getElementById('customerName').value.trim();
         const principal = parseFloat(document.getElementById('principal').value);
         const rate = parseFloat(document.getElementById('interestRate').value);
         const duration = parseFloat(document.getElementById('duration').value);
 
-        // 2. Simple field validation
         if (!name || isNaN(principal) || isNaN(rate) || isNaN(duration)) {
-            alert("Please accurately complete all input fields.");
+            alert("Please complete all fields accurately before saving.");
             return;
         }
 
-        // 3. Mathematical Interest Calculations (Simple Interest Base)
         const interestEarned = principal * (rate / 100) * duration;
         const totalPayable = principal + interestEarned;
 
-        // 4. Update the quick live display box
         document.getElementById('outInterest').innerText = `$${interestEarned.toFixed(2)}`;
         document.getElementById('outTotal').innerText = `$${totalPayable.toFixed(2)}`;
         document.getElementById('resultsPanel').style.display = 'block';
 
-        // 5. Store record in the ledger array state
-        const record = {
-            id: Date.now(), // simple unique timestamp ID
+        const activityRecord = {
+            id: Date.now(),
             name: name,
             principal: principal,
             rate: rate,
             duration: duration,
             total: totalPayable
         };
-        loanLedger.push(record);
+        loanLedger.push(activityRecord);
 
-        // 6. Reset Form Fields
         document.getElementById('customerName').value = '';
         document.getElementById('principal').value = '';
         document.getElementById('interestRate').value = '';
         document.getElementById('duration').value = '';
 
-        // 7. Refresh user interface components
         renderLedger();
+        alert("Activity recorded successfully to the backend log!");
+    }
+
+    function showLoginFields() {
+        const targetForm = document.getElementById('loginFields');
+        targetForm.style.display = targetForm.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function verifyAdminAuth() {
+        const userIn = document.getElementById('adminUser').value;
+        const passIn = document.getElementById('adminPass').value;
+        const errorMsg = document.getElementById('loginErrorMessage');
+
+        // Verify credentials against the updated state configurations
+        if (userIn === currentAdminUsername && passIn === currentAdminPassword) {
+            isAdminAuthenticated = true;
+            errorMsg.style.display = 'none';
+            document.getElementById('adminGateSection').style.display = 'none';
+            document.getElementById('secureBackendSection').style.display = 'block';
+            
+            document.getElementById('adminUser').value = '';
+            document.getElementById('adminPass').value = '';
+            
+            renderLedger();
+        } else {
+            errorMsg.style.display = 'block';
+        }
+    }
+
+    // Dynamic Password Assignment Module inside the Authenticated Portal
+    function changeAdminPassword() {
+        const currentCheck = document.getElementById('currentPassCheck').value;
+        const newPassword = document.getElementById('newPassValue').value.trim();
+        const errorMsg = document.getElementById('settingsErrorMessage');
+        const successMsg = document.getElementById('settingsSuccessMessage');
+
+        // Clear display states
+        errorMsg.style.display = 'none';
+        successMsg.style.display = 'none';
+
+        // Validation checks
+        if (currentCheck !== currentAdminPassword) {
+            errorMsg.innerText = "Verification failed: Current password mismatch.";
+            errorMsg.style.display = 'block';
+            return;
+        }
+
+        if (newPassword.length < 4) {
+            errorMsg.innerText = "Security Weakness: New password must be at least 4 characters long.";
+            errorMsg.style.display = 'block';
+            return;
+        }
+
+        // Apply updated password variables to memory states
+        currentAdminPassword = newPassword;
+        successMsg.style.display = 'block';
+
+        // Clear settings form inputs
+        document.getElementById('currentPassCheck').value = '';
+        document.getElementById('newPassValue').value = '';
+    }
+
+    function logoutAdmin() {
+        isAdminAuthenticated = false;
+        document.getElementById('secureBackendSection').style.display = 'none';
+        document.getElementById('adminGateSection').style.display = 'block';
+        document.getElementById('loginFields').style.display = 'none';
+        
+        // Reset sub-panel state alerts on logout
+        document.getElementById('settingsErrorMessage').style.display = 'none';
+        document.getElementById('settingsSuccessMessage').style.display = 'none';
     }
 
     function deleteRecord(id) {
-        // Filter out target item
+        if (!isAdminAuthenticated) return;
         loanLedger = loanLedger.filter(item => item.id !== id);
         renderLedger();
     }
@@ -317,16 +446,13 @@ tr:hover {
         const tbody = document.getElementById('ledgerBody');
         const countSpan = document.getElementById('totalRecords');
         
-        // Clear old rows
-        tbody.innerHTML = '';
-        
-        // Update metric flag
         countSpan.innerText = loanLedger.length;
+        if (!isAdminAuthenticated) return;
 
-        // Rebuild table body structures
+        tbody.innerHTML = '';
+
         loanLedger.forEach(item => {
             const row = document.createElement('tr');
-            
             row.innerHTML = `
                 <td>${escapeHTML(item.name)}</td>
                 <td>$${item.principal.toFixed(2)}</td>
@@ -341,7 +467,6 @@ tr:hover {
         });
     }
 
-    // Helper function to escape special characters to mitigate potential XSS
     function escapeHTML(str) {
         return str.replace(/[&<>'"]/g, 
             tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
