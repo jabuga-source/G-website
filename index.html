@@ -29,7 +29,7 @@ body {
     background: rgba(255,255,255,0.08);
     backdrop-filter: blur(10px);
     width: 100%;
-    max-width: 780px;
+    max-width: 850px;
     padding: 30px;
     border-radius: 20px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
@@ -371,11 +371,23 @@ tr:hover {
             <select id="interestType">
                 <option value="year">Per Year (p.a.)</option>
                 <option value="month">Per Month (p.m.)</option>
+                <option value="week">Per Week (p.w.)</option>
             </select>
         </div>
+    </div>
+
+    <div class="form-row">
         <div class="form-group">
-            <label for="duration">Term (Years)</label>
-            <input type="number" id="duration" min="0" step="any" placeholder="e.g. 3" />
+            <label for="duration">Term Duration</label>
+            <input type="number" id="duration" min="0" step="any" placeholder="e.g. 6" />
+        </div>
+        <div class="form-group" style="flex: 0.45;">
+            <label for="durationUnit">Term Unit</label>
+            <select id="durationUnit">
+                <option value="years">Years</option>
+                <option value="months">Months</option>
+                <option value="weeks">Weeks</option>
+            </select>
         </div>
     </div>
 
@@ -431,6 +443,7 @@ tr:hover {
                         <th>Contact info</th>
                         <th>Due Date</th>
                         <th>Rate Configuration</th>
+                        <th>Term Span</th>
                         <th>Total Due</th>
                         <th>Alert Status</th>
                         <th>Action</th>
@@ -484,43 +497,67 @@ tr:hover {
         const principal = parseFloat(document.getElementById('principal').value);
         const rate = parseFloat(document.getElementById('interestRate').value);
         const calculationType = document.getElementById('interestCalculationType').value;
-        const interestType = document.getElementById('interestType').value;
+        const interestType = document.getElementById('interestType').value; // 'year', 'month', 'week'
+        
         const duration = parseFloat(document.getElementById('duration').value);
+        const durationUnit = document.getElementById('durationUnit').value; // 'years', 'months', 'weeks'
 
         if (!name || !phone || !email || !dateInput || isNaN(principal) || isNaN(rate) || isNaN(duration)) {
             alert("Please complete all fields accurately.");
             return;
         }
 
+        // --- UNIFIED TIMELINE NORMALIZATION ENGINE ---
+        // Converts the input term directly to absolute Weeks, Months, and Years
+        let termInWeeks = 0;
+        let termInMonths = 0;
+        let termInYears = 0;
+
+        if (durationUnit === 'years') {
+            termInYears = duration;
+            termInMonths = duration * 12;
+            termInWeeks = duration * 52;
+        } else if (durationUnit === 'months') {
+            termInYears = duration / 12;
+            termInMonths = duration;
+            termInWeeks = duration * 4.3333;
+        } else if (durationUnit === 'weeks') {
+            termInYears = duration / 52;
+            termInMonths = duration / 4.3333;
+            termInWeeks = duration;
+        }
+
+        // Determine which timeline variant to use based on the designated Rate Period
+        let totalPeriods = 0;
+        if (interestType === 'week') {
+            totalPeriods = termInWeeks;
+        } else if (interestType === 'month') {
+            totalPeriods = termInMonths;
+        } else {
+            totalPeriods = termInYears;
+        }
+
         let totalPayable = 0;
         let interestEarned = 0;
         const decimalRate = rate / 100;
 
-        // Unified Calculation Engine Parsing Logic
+        // Process final calculation based on Simple vs Compound selection
         if (calculationType === 'simple') {
-            if (interestType === 'month') {
-                const totalMonths = duration * 12;
-                interestEarned = principal * decimalRate * totalMonths;
-            } else {
-                interestEarned = principal * decimalRate * duration;
-            }
+            interestEarned = principal * decimalRate * totalPeriods;
             totalPayable = principal + interestEarned;
         } else {
-            // Compound Interest Branch Calculation Engine
-            if (interestType === 'month') {
-                const totalMonths = duration * 12;
-                // Compounded monthly over the converted total period metric
-                totalPayable = principal * Math.pow((1 + decimalRate), totalMonths);
-            } else {
-                // Compounded annually baseline parameters
-                totalPayable = principal * Math.pow((1 + decimalRate), duration);
-            }
+            totalPayable = principal * Math.pow((1 + decimalRate), totalPeriods);
             interestEarned = totalPayable - principal;
         }
         
         document.getElementById('outInterest').innerText = `$${interestEarned.toFixed(2)}`;
         document.getElementById('outTotal').innerText = `$${totalPayable.toFixed(2)}`;
         document.getElementById('resultsPanel').style.display = 'block';
+
+        // Tag labels for display inside dashboard records
+        let periodTag = 'p.a.';
+        if (interestType === 'month') periodTag = 'p.m.';
+        if (interestType === 'week') periodTag = 'p.w.';
 
         const activityRecord = {
             id: Date.now(),
@@ -531,13 +568,13 @@ tr:hover {
             principal: principal,
             rate: rate,
             calcMethod: calculationType === 'simple' ? 'Simple' : 'Compound',
-            ratePeriod: interestType === 'month' ? 'p.m.' : 'p.a.',
-            duration: duration,
+            ratePeriod: periodTag,
+            durationDisplay: `${duration} ${durationUnit}`,
             total: totalPayable
         };
         loanLedger.push(activityRecord);
 
-        // Reset inputs
+        // Clear dynamic inputs
         document.getElementById('customerName').value = '';
         document.getElementById('phoneNumber').value = '';
         document.getElementById('emailAddress').value = '';
@@ -547,7 +584,7 @@ tr:hover {
         document.getElementById('duration').value = '';
 
         renderLedger();
-        alert("Activity logged completely using " + calculationType + " parameters!");
+        alert(`Activity logged completely using localized ${durationUnit} matrices!`);
     }
 
     function showLoginFields() {
@@ -666,10 +703,10 @@ tr:hover {
                     <td>${escapeHTML(item.fullPhone)}<br><span style="color:#cbd5e1; font-size:0.75rem;">${escapeHTML(item.email)}</span></td>
                     <td>${item.dueDate}</td>
                     <td>
-                        <span style="color:#38bdf8; font-weight:bold;">${item.calcMethod}</span> Method<br>
-                        ${item.rate}% <strong>${item.ratePeriod}</strong><br>
-                        <span style="color:#cbd5e1; font-size:0.75rem;">Principal: $${item.principal.toFixed(2)}</span>
+                        <span style="color:#38bdf8; font-weight:bold;">${item.calcMethod}</span><br>
+                        ${item.rate}% <strong>${item.ratePeriod}</strong>
                     </td>
+                    <td><span class="status-badge" style="background:rgba(255,255,255,0.1); color:#f8fafc;">${item.durationDisplay}</span><br><span style="color:#cbd5e1; font-size:0.75rem;">Base: $${item.principal.toFixed(2)}</span></td>
                     <td><strong>$${item.total.toFixed(2)}</strong></td>
                     <td>${statusHTML}</td>
                     <td>
@@ -685,6 +722,7 @@ tr:hover {
         document.getElementById('totalWarnings').innerText = warningCount;
     }
 
+    // Protection mapping string utility
     function escapeHTML(str) {
         return str.replace(/[&<>'"]/g, 
             tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
