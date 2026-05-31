@@ -1,3 +1,4 @@
+HTML
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -195,6 +196,158 @@ tr:hover {
     <p class="subtitle">Loan & Interest Tracking System</p>
 
     <div class="form-group">
-        <label>Customer Name</label>
+        <label for="customerName">Customer Name</label>
         <input type="text" id="customerName" placeholder="Enter customer name" />
     </div>
+    
+    <div class="form-group">
+        <label for="principal">Principal Amount ($)</label>
+        <input type="number" id="principal" min="0" step="any" placeholder="e.g. 5000" />
+    </div>
+
+    <div class="form-group">
+        <label for="interestRate">Annual Interest Rate (%)</label>
+        <input type="number" id="interestRate" min="0" step="any" placeholder="e.g. 5" />
+    </div>
+
+    <div class="form-group">
+        <label for="duration">Duration (Years)</label>
+        <input type="number" id="duration" min="0" step="any" placeholder="e.g. 3" />
+    </div>
+
+    <button onclick="calculateLoan()">Calculate & Save</button>
+
+    <div class="results" id="resultsPanel" style="display: none;">
+        <div class="result-box">
+            <div class="result-title">Total Interest Earned</div>
+            <div id="outInterest">$0.00</div>
+        </div>
+        <div class="result-box">
+            <div class="result-title">Total Balance Payable</div>
+            <div id="outTotal">$0.00</div>
+        </div>
+    </div>
+
+    <div class="host-section">
+        <div class="host-profile-box">
+            <div class="result-title">Global Portfolio Metrics</div>
+            <div class="flex-container">
+                <div>Total Active Records: <span id="totalRecords">0</span></div>
+            </div>
+        </div>
+
+        <label>Active Loan Ledger</label>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Principal</th>
+                        <th>Rate</th>
+                        <th>Term</th>
+                        <th>Total Due</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="ledgerBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="footer">
+    &copy; 2026 G Finances. Secure, Analytical Ledger.
+</div>
+
+<script>
+    // State management array to hold our calculated logs
+    let loanLedger = [];
+
+    function calculateLoan() {
+        // 1. Fetch values from inputs
+        const name = document.getElementById('customerName').value.trim();
+        const principal = parseFloat(document.getElementById('principal').value);
+        const rate = parseFloat(document.getElementById('interestRate').value);
+        const duration = parseFloat(document.getElementById('duration').value);
+
+        // 2. Simple field validation
+        if (!name || isNaN(principal) || isNaN(rate) || isNaN(duration)) {
+            alert("Please accurately complete all input fields.");
+            return;
+        }
+
+        // 3. Mathematical Interest Calculations (Simple Interest Base)
+        const interestEarned = principal * (rate / 100) * duration;
+        const totalPayable = principal + interestEarned;
+
+        // 4. Update the quick live display box
+        document.getElementById('outInterest').innerText = `$${interestEarned.toFixed(2)}`;
+        document.getElementById('outTotal').innerText = `$${totalPayable.toFixed(2)}`;
+        document.getElementById('resultsPanel').style.display = 'block';
+
+        // 5. Store record in the ledger array state
+        const record = {
+            id: Date.now(), // simple unique timestamp ID
+            name: name,
+            principal: principal,
+            rate: rate,
+            duration: duration,
+            total: totalPayable
+        };
+        loanLedger.push(record);
+
+        // 6. Reset Form Fields
+        document.getElementById('customerName').value = '';
+        document.getElementById('principal').value = '';
+        document.getElementById('interestRate').value = '';
+        document.getElementById('duration').value = '';
+
+        // 7. Refresh user interface components
+        renderLedger();
+    }
+
+    function deleteRecord(id) {
+        // Filter out target item
+        loanLedger = loanLedger.filter(item => item.id !== id);
+        renderLedger();
+    }
+
+    function renderLedger() {
+        const tbody = document.getElementById('ledgerBody');
+        const countSpan = document.getElementById('totalRecords');
+        
+        // Clear old rows
+        tbody.innerHTML = '';
+        
+        // Update metric flag
+        countSpan.innerText = loanLedger.length;
+
+        // Rebuild table body structures
+        loanLedger.forEach(item => {
+            const row = document.createElement('tr');
+            
+            row.innerHTML = `
+                <td>${escapeHTML(item.name)}</td>
+                <td>$${item.principal.toFixed(2)}</td>
+                <td>${item.rate}%</td>
+                <td>${item.duration} ${item.duration === 1 ? 'Yr' : 'Yrs'}</td>
+                <td><strong>$${item.total.toFixed(2)}</strong></td>
+                <td>
+                    <button class="btn-danger" onclick="deleteRecord(${item.id})">Delete</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // Helper function to escape special characters to mitigate potential XSS
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+    }
+</script>
+
+</body>
+</html>
