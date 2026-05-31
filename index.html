@@ -29,7 +29,7 @@ body {
     background: rgba(255,255,255,0.08);
     backdrop-filter: blur(10px);
     width: 100%;
-    max-width: 700px;
+    max-width: 750px;
     padding: 30px;
     border-radius: 20px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
@@ -52,13 +52,24 @@ h1 {
     margin-bottom: 18px;
 }
 
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 18px;
+}
+
+.form-row .form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
 label {
     display: block;
     margin-bottom: 8px;
     font-weight: bold;
 }
 
-input {
+input, select {
     width: 100%;
     padding: 12px;
     border-radius: 10px;
@@ -66,6 +77,15 @@ input {
     font-size: 1rem;
     background: #f8fafc;
     color: #0f172a;
+}
+
+select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg fill='%230f172a' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
 }
 
 button {
@@ -126,6 +146,18 @@ button:hover {
     margin-bottom: 5px;
 }
 
+/* Badge Status Styles */
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+.badge-clear { background: #22c55e; color: white; }
+.badge-warning { background: #f59e0b; color: white; }
+.badge-overdue { background: #ef4444; color: white; }
+
 /* Host Panel & Table Styling */
 .host-section {
     margin-top: 30px;
@@ -142,8 +174,9 @@ button:hover {
 
 .flex-container {
     display: flex; 
-    gap: 10px; 
+    gap: 15px; 
     margin-top: 8px;
+    flex-wrap: wrap;
 }
 
 .table-wrapper {
@@ -155,7 +188,7 @@ table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 10px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     background: rgba(15, 23, 42, 0.6);
     border-radius: 10px;
     overflow: hidden;
@@ -217,7 +250,7 @@ tr:hover {
     z-index: 999;
     font-weight: normal;
     box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    display: none; /* Only reveals when Admin session is verified */
+    display: none;
     transition: all 0.2s ease;
 }
 
@@ -264,9 +297,9 @@ tr:hover {
 }
 
 @media (max-width: 600px) {
-    h1 {
-        font-size: 2rem;
-    }
+    h1 { font-size: 2rem; }
+    .form-row { flex-direction: column; gap: 0; }
+    .form-row .form-group { margin-bottom: 18px; }
 }
 </style>
 </head>
@@ -280,23 +313,56 @@ tr:hover {
         <label for="customerName">Customer Name</label>
         <input type="text" id="customerName" placeholder="Enter customer name" />
     </div>
+
+    <div class="form-row">
+        <div class="form-group" style="flex: 0.35;">
+            <label for="countryCode">Country Code</label>
+            <select id="countryCode">
+                <option value="+1">🇺🇸 US/CA (+1)</option>
+                <option value="+44">🇬🇧 UK (+44)</option>
+                <option value="+254">🇰🇪 Kenya (+254)</option>
+                <option value="+91">🇮🇳 India (+9印度)</option>
+                <option value="+61">🇦🇺 Australia (+61)</option>
+                <option value="+27">🇿🇦 South Africa (+27)</option>
+                <option value="+971">🇦🇪 UAE (+971)</option>
+                <option value="+33">🇫🇷 France (+33)</option>
+                <option value="+49">🇩🇪 Germany (+49)</option>
+                <option value="+81">🇯🇵 Japan (+81)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="phoneNumber">Phone Number</label>
+            <input type="tel" id="phoneNumber" placeholder="e.g. 712345678" />
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="emailAddress">Email Address</label>
+            <input type="email" id="emailAddress" placeholder="name@domain.com" />
+        </div>
+        <div class="form-group">
+            <label for="dueDate">Debt Settlement Due Date</label>
+            <input type="date" id="dueDate" />
+        </div>
+    </div>
     
-    <div class="form-group">
-        <label for="principal">Principal Amount ($)</label>
-        <input type="number" id="principal" min="0" step="any" placeholder="e.g. 5000" />
+    <div class="form-row">
+        <div class="form-group">
+            <label for="principal">Principal Amount ($)</label>
+            <input type="number" id="principal" min="0" step="any" placeholder="e.g. 5000" />
+        </div>
+        <div class="form-group">
+            <label for="interestRate">Annual Rate (%)</label>
+            <input type="number" id="interestRate" min="0" step="any" placeholder="e.g. 5" />
+        </div>
+        <div class="form-group">
+            <label for="duration">Term (Years)</label>
+            <input type="number" id="duration" min="0" step="any" placeholder="e.g. 3" />
+        </div>
     </div>
 
-    <div class="form-group">
-        <label for="interestRate">Annual Interest Rate (%)</label>
-        <input type="number" id="interestRate" min="0" step="any" placeholder="e.g. 5" />
-    </div>
-
-    <div class="form-group">
-        <label for="duration">Duration (Years)</label>
-        <input type="number" id="duration" min="0" step="any" placeholder="e.g. 3" />
-    </div>
-
-    <button onclick="calculateLoan()">Calculate & Save Activity</button>
+    <button onclick="calculateLoan()">Calculate & Log Activity File</button>
 
     <div class="results" id="resultsPanel" style="display: none;">
         <div class="result-box">
@@ -333,7 +399,9 @@ tr:hover {
                 <button class="btn-danger" style="padding: 5px 10px; font-size: 0.8rem;" onclick="logoutAdmin()">Lock Backend</button>
             </div>
             <div class="flex-container" style="margin-top: 12px;">
-                <div>Total Active Recorded Log Entries: <span id="totalRecords" style="color: #38bdf8; font-weight: bold;">0</span></div>
+                <div>Total Records: <span id="totalRecords" style="color: #38bdf8; font-weight: bold;">0</span></div>
+                <div>Reminders Queue: <span id="totalReminders" style="color: #f59e0b; font-weight: bold;">0</span></div>
+                <div>Legal Warnings Issued: <span id="totalWarnings" style="color: #ef4444; font-weight: bold;">0</span></div>
             </div>
         </div>
 
@@ -342,11 +410,11 @@ tr:hover {
             <table>
                 <thead>
                     <tr>
-                        <th>Customer Name</th>
-                        <th>Principal</th>
-                        <th>Rate</th>
-                        <th>Term</th>
+                        <th>Customer</th>
+                        <th>Contact info</th>
+                        <th>Due Date</th>
                         <th>Total Due</th>
+                        <th>Alert Status</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -358,7 +426,7 @@ tr:hover {
 </div>
 
 <div class="footer">
-    &copy; 2026 G Finances. Secure, Analytical Ledger.
+    &copy; 2026 G Finances. Secure, Automated Tracking Engine.
 </div>
 
 <button class="bottom-left-admin-btn" id="fixedSettingsBtn" onclick="openPasswordModal()">⚙ Change Password</button>
@@ -366,20 +434,16 @@ tr:hover {
 <div class="modal-overlay" id="passwordModal">
     <div class="modal-box">
         <div class="result-title" style="margin-bottom: 15px; font-size: 1.2rem;">Modify Portal Password</div>
-        
         <div class="form-group">
             <label style="font-size: 0.85rem; color: #cbd5e1;">Current Password</label>
-            <input type="password" id="currentPassCheck" placeholder="Confirm old password" style="padding: 10px; font-size: 0.9rem;" />
+            <input type="password" id="currentPassCheck" placeholder="Confirm old password" />
         </div>
-        
         <div class="form-group">
             <label style="font-size: 0.85rem; color: #cbd5e1;">New Password</label>
-            <input type="password" id="newPassValue" placeholder="Enter new secret code" style="padding: 10px; font-size: 0.9rem;" />
+            <input type="password" id="newPassValue" placeholder="Enter new secret code" />
         </div>
-        
-        <button class="btn-secondary" style="margin-top: 5px; padding: 12px; font-size: 0.95rem;" onclick="changeAdminPassword()">Update Security Key</button>
+        <button class="btn-secondary" style="margin-top: 5px; padding: 12px;" onclick="changeAdminPassword()">Update Security Key</button>
         <button class="btn-danger" style="margin-top: 10px; width: 100%; padding: 10px; background: #475569;" onclick="closePasswordModal()">Cancel</button>
-        
         <p class="auth-error" id="settingsErrorMessage"></p>
         <p class="settings-success" id="settingsSuccessMessage">Password updated successfully!</p>
     </div>
@@ -394,12 +458,17 @@ tr:hover {
 
     function calculateLoan() {
         const name = document.getElementById('customerName').value.trim();
+        const code = document.getElementById('countryCode').value;
+        const phone = document.getElementById('phoneNumber').value.trim();
+        const email = document.getElementById('emailAddress').value.trim();
+        const dateInput = document.getElementById('dueDate').value;
+        
         const principal = parseFloat(document.getElementById('principal').value);
         const rate = parseFloat(document.getElementById('interestRate').value);
         const duration = parseFloat(document.getElementById('duration').value);
 
-        if (!name || isNaN(principal) || isNaN(rate) || isNaN(duration)) {
-            alert("Please complete all fields accurately before saving.");
+        if (!name || !phone || !email || !dateInput || isNaN(principal) || isNaN(rate) || isNaN(duration)) {
+            alert("Please complete all forms including contact channels and due dates accurately.");
             return;
         }
 
@@ -413,6 +482,9 @@ tr:hover {
         const activityRecord = {
             id: Date.now(),
             name: name,
+            fullPhone: `${code} ${phone}`,
+            email: email,
+            dueDate: dateInput,
             principal: principal,
             rate: rate,
             duration: duration,
@@ -420,13 +492,17 @@ tr:hover {
         };
         loanLedger.push(activityRecord);
 
+        // Reset Inputs
         document.getElementById('customerName').value = '';
+        document.getElementById('phoneNumber').value = '';
+        document.getElementById('emailAddress').value = '';
+        document.getElementById('dueDate').value = '';
         document.getElementById('principal').value = '';
         document.getElementById('interestRate').value = '';
         document.getElementById('duration').value = '';
 
         renderLedger();
-        alert("Activity recorded successfully to the backend log!");
+        alert("Activity recorded safely! Automation queues activated.");
     }
 
     function showLoginFields() {
@@ -444,8 +520,6 @@ tr:hover {
             errorMsg.style.display = 'none';
             document.getElementById('adminGateSection').style.display = 'none';
             document.getElementById('secureBackendSection').style.display = 'block';
-            
-            // Show the dynamic configuration button at bottom-left corner
             document.getElementById('fixedSettingsBtn').style.display = 'block';
             
             document.getElementById('adminUser').value = '';
@@ -457,7 +531,6 @@ tr:hover {
         }
     }
 
-    /* OVERLAY MODAL TOGGLES */
     function openPasswordModal() {
         const modal = document.getElementById('passwordModal');
         modal.style.visibility = 'visible';
@@ -468,8 +541,6 @@ tr:hover {
         const modal = document.getElementById('passwordModal');
         modal.style.visibility = 'hidden';
         modal.style.opacity = '0';
-        
-        // Reset sub-text field metrics safely upon closing
         document.getElementById('currentPassCheck').value = '';
         document.getElementById('newPassValue').value = '';
         document.getElementById('settingsErrorMessage').style.display = 'none';
@@ -482,28 +553,21 @@ tr:hover {
         const errorMsg = document.getElementById('settingsErrorMessage');
         const successMsg = document.getElementById('settingsSuccessMessage');
 
-        errorMsg.style.display = 'none';
-        successMsg.style.display = 'none';
-
         if (currentCheck !== currentAdminPassword) {
-            errorMsg.innerText = "Verification failed: Current password mismatch.";
+            errorMsg.innerText = "Current password mismatch.";
             errorMsg.style.display = 'block';
             return;
         }
 
         if (newPassword.length < 4) {
-            errorMsg.innerText = "Security Error: Code must be at least 4 characters.";
+            errorMsg.innerText = "Password must be at least 4 characters.";
             errorMsg.style.display = 'block';
             return;
         }
 
         currentAdminPassword = newPassword;
         successMsg.style.display = 'block';
-
-        // Auto-close modal after a small validation display timeout delay
-        setTimeout(() => {
-            closePasswordModal();
-        }, 1200);
+        setTimeout(() => { closePasswordModal(); }, 1200);
     }
 
     function logoutAdmin() {
@@ -511,8 +575,6 @@ tr:hover {
         document.getElementById('secureBackendSection').style.display = 'none';
         document.getElementById('adminGateSection').style.display = 'block';
         document.getElementById('loginFields').style.display = 'none';
-        
-        // Hide fixed button upon portal exit
         document.getElementById('fixedSettingsBtn').style.display = 'none';
         closePasswordModal();
     }
@@ -525,27 +587,58 @@ tr:hover {
 
     function renderLedger() {
         const tbody = document.getElementById('ledgerBody');
-        const countSpan = document.getElementById('totalRecords');
         
-        countSpan.innerText = loanLedger.length;
-        if (!isAdminAuthenticated) return;
+        let reminderCount = 0;
+        let warningCount = 0;
+
+        // Establish uniform time markers for tracking 
+        const today = new Date();
+        today.setHours(0,0,0,0);
 
         tbody.innerHTML = '';
 
         loanLedger.forEach(item => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${escapeHTML(item.name)}</td>
-                <td>$${item.principal.toFixed(2)}</td>
-                <td>${item.rate}%</td>
-                <td>${item.duration} ${item.duration === 1 ? 'Yr' : 'Yrs'}</td>
-                <td><strong>$${item.total.toFixed(2)}</strong></td>
-                <td>
-                    <button class="btn-danger" onclick="deleteRecord(${item.id})">Delete</button>
-                </td>
-            `;
-            tbody.appendChild(row);
+            const targetDueDate = new Date(item.dueDate);
+            targetDueDate.setHours(0,0,0,0);
+
+            // Compute delta variance difference in milliseconds -> days
+            const timeDiff = targetDueDate.getTime() - today.getTime();
+            const daysDifference = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+            let statusHTML = '';
+            
+            if (daysDifference < 0) {
+                // Past due date threshold
+                statusHTML = `<span class="status-badge badge-overdue" title="System Action: Warning Letter dispatched to ${item.email}">⚠️ Overdue (Warning)</span>`;
+                warningCount++;
+            } else if (daysDifference <= 7) {
+                // Imminent approaching threshold (under 7 days remaining)
+                statusHTML = `<span class="status-badge badge-warning" title="System Action: Automated SMS dispatch to ${item.fullPhone}">⏳ Priority Reminder</span>`;
+                reminderCount++;
+            } else {
+                statusHTML = `<span class="status-badge badge-clear">Active Clear</span>`;
+            }
+
+            if (isAdminAuthenticated) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${escapeHTML(item.name)}</strong></td>
+                    <td>${escapeHTML(item.fullPhone)}<br><span style="color:#cbd5e1; font-size:0.75rem;">${escapeHTML(item.email)}</span></td>
+                    <td>${item.dueDate}</td>
+                    <td>$${item.total.toFixed(2)}</td>
+                    <td>${statusHTML}</td>
+                    <td>
+                        <button class="btn-danger" onclick="deleteRecord(${item.id})">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            }
         });
+
+        // Update dashboard system flags metrics
+        document.getElementById('totalRecords').innerText = loanLedger.length;
+        document.getElementById('totalReminders').innerText = reminderCount;
+        document.getElementById('totalWarnings').innerText = warningCount;
     }
 
     function escapeHTML(str) {
