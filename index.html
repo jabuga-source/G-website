@@ -29,7 +29,7 @@ body {
     background: rgba(255,255,255,0.08);
     backdrop-filter: blur(10px);
     width: 100%;
-    max-width: 750px;
+    max-width: 780px;
     padding: 30px;
     border-radius: 20px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
@@ -321,7 +321,7 @@ tr:hover {
                 <option value="+1">🇺🇸 US/CA (+1)</option>
                 <option value="+44">🇬🇧 UK (+44)</option>
                 <option value="+254">🇰🇪 Kenya (+254)</option>
-                <option value="+91">🇮🇳 India (+9印度)</option>
+                <option value="+91">🇮🇳 India (+91)</option>
                 <option value="+61">🇦🇺 Australia (+61)</option>
                 <option value="+27">🇿🇦 South Africa (+27)</option>
                 <option value="+971">🇦🇪 UAE (+971)</option>
@@ -353,8 +353,25 @@ tr:hover {
             <input type="number" id="principal" min="0" step="any" placeholder="e.g. 5000" />
         </div>
         <div class="form-group">
-            <label for="interestRate">Annual Rate (%)</label>
+            <label for="interestRate">Interest Rate (%)</label>
             <input type="number" id="interestRate" min="0" step="any" placeholder="e.g. 5" />
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="interestCalculationType">Interest Method</label>
+            <select id="interestCalculationType">
+                <option value="simple">Simple Interest</option>
+                <option value="compound">Compound Interest</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="interestType">Rate Period</label>
+            <select id="interestType">
+                <option value="year">Per Year (p.a.)</option>
+                <option value="month">Per Month (p.m.)</option>
+            </select>
         </div>
         <div class="form-group">
             <label for="duration">Term (Years)</label>
@@ -413,6 +430,7 @@ tr:hover {
                         <th>Customer</th>
                         <th>Contact info</th>
                         <th>Due Date</th>
+                        <th>Rate Configuration</th>
                         <th>Total Due</th>
                         <th>Alert Status</th>
                         <th>Action</th>
@@ -465,16 +483,41 @@ tr:hover {
         
         const principal = parseFloat(document.getElementById('principal').value);
         const rate = parseFloat(document.getElementById('interestRate').value);
+        const calculationType = document.getElementById('interestCalculationType').value;
+        const interestType = document.getElementById('interestType').value;
         const duration = parseFloat(document.getElementById('duration').value);
 
         if (!name || !phone || !email || !dateInput || isNaN(principal) || isNaN(rate) || isNaN(duration)) {
-            alert("Please complete all forms including contact channels and due dates accurately.");
+            alert("Please complete all fields accurately.");
             return;
         }
 
-        const interestEarned = principal * (rate / 100) * duration;
-        const totalPayable = principal + interestEarned;
+        let totalPayable = 0;
+        let interestEarned = 0;
+        const decimalRate = rate / 100;
 
+        // Unified Calculation Engine Parsing Logic
+        if (calculationType === 'simple') {
+            if (interestType === 'month') {
+                const totalMonths = duration * 12;
+                interestEarned = principal * decimalRate * totalMonths;
+            } else {
+                interestEarned = principal * decimalRate * duration;
+            }
+            totalPayable = principal + interestEarned;
+        } else {
+            // Compound Interest Branch Calculation Engine
+            if (interestType === 'month') {
+                const totalMonths = duration * 12;
+                // Compounded monthly over the converted total period metric
+                totalPayable = principal * Math.pow((1 + decimalRate), totalMonths);
+            } else {
+                // Compounded annually baseline parameters
+                totalPayable = principal * Math.pow((1 + decimalRate), duration);
+            }
+            interestEarned = totalPayable - principal;
+        }
+        
         document.getElementById('outInterest').innerText = `$${interestEarned.toFixed(2)}`;
         document.getElementById('outTotal').innerText = `$${totalPayable.toFixed(2)}`;
         document.getElementById('resultsPanel').style.display = 'block';
@@ -487,12 +530,14 @@ tr:hover {
             dueDate: dateInput,
             principal: principal,
             rate: rate,
+            calcMethod: calculationType === 'simple' ? 'Simple' : 'Compound',
+            ratePeriod: interestType === 'month' ? 'p.m.' : 'p.a.',
             duration: duration,
             total: totalPayable
         };
         loanLedger.push(activityRecord);
 
-        // Reset Inputs
+        // Reset inputs
         document.getElementById('customerName').value = '';
         document.getElementById('phoneNumber').value = '';
         document.getElementById('emailAddress').value = '';
@@ -502,7 +547,7 @@ tr:hover {
         document.getElementById('duration').value = '';
 
         renderLedger();
-        alert("Activity recorded safely! Automation queues activated.");
+        alert("Activity logged completely using " + calculationType + " parameters!");
     }
 
     function showLoginFields() {
@@ -587,11 +632,9 @@ tr:hover {
 
     function renderLedger() {
         const tbody = document.getElementById('ledgerBody');
-        
         let reminderCount = 0;
         let warningCount = 0;
 
-        // Establish uniform time markers for tracking 
         const today = new Date();
         today.setHours(0,0,0,0);
 
@@ -601,22 +644,19 @@ tr:hover {
             const targetDueDate = new Date(item.dueDate);
             targetDueDate.setHours(0,0,0,0);
 
-            // Compute delta variance difference in milliseconds -> days
             const timeDiff = targetDueDate.getTime() - today.getTime();
             const daysDifference = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
             let statusHTML = '';
             
             if (daysDifference < 0) {
-                // Past due date threshold
-                statusHTML = `<span class="status-badge badge-overdue" title="System Action: Warning Letter dispatched to ${item.email}">⚠️ Overdue (Warning)</span>`;
+                statusHTML = `<span class="status-badge badge-overdue">⚠️ Overdue</span>`;
                 warningCount++;
             } else if (daysDifference <= 7) {
-                // Imminent approaching threshold (under 7 days remaining)
-                statusHTML = `<span class="status-badge badge-warning" title="System Action: Automated SMS dispatch to ${item.fullPhone}">⏳ Priority Reminder</span>`;
+                statusHTML = `<span class="status-badge badge-warning">⏳ Reminder</span>`;
                 reminderCount++;
             } else {
-                statusHTML = `<span class="status-badge badge-clear">Active Clear</span>`;
+                statusHTML = `<span class="status-badge badge-clear">Active</span>`;
             }
 
             if (isAdminAuthenticated) {
@@ -625,7 +665,12 @@ tr:hover {
                     <td><strong>${escapeHTML(item.name)}</strong></td>
                     <td>${escapeHTML(item.fullPhone)}<br><span style="color:#cbd5e1; font-size:0.75rem;">${escapeHTML(item.email)}</span></td>
                     <td>${item.dueDate}</td>
-                    <td>$${item.total.toFixed(2)}</td>
+                    <td>
+                        <span style="color:#38bdf8; font-weight:bold;">${item.calcMethod}</span> Method<br>
+                        ${item.rate}% <strong>${item.ratePeriod}</strong><br>
+                        <span style="color:#cbd5e1; font-size:0.75rem;">Principal: $${item.principal.toFixed(2)}</span>
+                    </td>
+                    <td><strong>$${item.total.toFixed(2)}</strong></td>
                     <td>${statusHTML}</td>
                     <td>
                         <button class="btn-danger" onclick="deleteRecord(${item.id})">Delete</button>
@@ -635,7 +680,6 @@ tr:hover {
             }
         });
 
-        // Update dashboard system flags metrics
         document.getElementById('totalRecords').innerText = loanLedger.length;
         document.getElementById('totalReminders').innerText = reminderCount;
         document.getElementById('totalWarnings').innerText = warningCount;
